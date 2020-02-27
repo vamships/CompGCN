@@ -4,7 +4,8 @@ from data_loader import *
 # sys.path.append('./')
 from model.models import *
 
-from tqdm import trange
+import time as tm
+from tqdm import tqdm
 
 class Runner(object):
 
@@ -346,7 +347,7 @@ class Runner(object):
 		losses = []
 		train_iter = iter(self.data_iter['train'])
 
-		for step, batch in enumerate(train_iter):
+		for step, batch in tqdm(enumerate(train_iter)):
 			self.optimizer.zero_grad()
 			sub, rel, obj, label = self.read_batch(batch, 'train')
 
@@ -382,6 +383,8 @@ class Runner(object):
 			self.load_model(save_path)
 			self.logger.info('Successfully Loaded previous model')
 
+		self.logger.info(f"Start training...")
+		start = tm.time()
 		for epoch in range(self.p.max_epochs):
 			train_loss  = self.run_epoch(epoch, val_mrr)
 			# val_results = self.evaluate('valid', epoch)
@@ -394,6 +397,10 @@ class Runner(object):
 
 			# self.logger.info(
 			# 	'[Epoch {}]: Training Loss: {:.5}\n\n'.format(epoch, train_loss))
+		end = tm.time()
+		self.logger.info(f"Done training...")
+		self.logger.info(f"Training for {self.p.max_epochs} epochs took "
+						 f"{(end - start):06.2f}s")
 
 		# self.logger.info('Loading best model, Evaluating on Test data')
 		# self.load_model(save_path)
