@@ -401,7 +401,7 @@ class Runner(object):
 		end = tm.time()
 		self.logger.info(f"Done training...")
 		self.logger.info(f"Training for {self.p.max_epochs} epochs took "
-						 f"{(end - start):06.2f}s")
+						 f"{(end - start)/60:06.2f}mins")
 
 		# self.logger.info('Loading best model, Evaluating on Test data')
 		# self.load_model(save_path)
@@ -410,13 +410,14 @@ class Runner(object):
 		decorator = '*' * 5
 		self.logger.info(f"{decorator} Final Results {decorator}")
 		self.logger.info(f"Validation set ==> "
-						 f"MRR: {valid_results['mrr']:.3f},"
-						 f"MR: {valid_results['mr']:.3f}")
-		# f"hit@10: {valid_results['hit@10']:.3f}"
+						 f"MRR: {valid_results['mrr']:.3f}, "
+						 f"MR: {valid_results['mr']:.3f}, "
+						 f"hit@10: {valid_results['hits@10']:.3f}")
+		#
 		self.logger.info(f"Test set ==> "
-						 f"MRR: {test_results['mrr']:.3f},"
-						 f"MR: {test_results['mr']:.3f}")
-		#f"hit@10: {test_results['hit@10']:.3f}
+						 f"MRR: {test_results['mrr']:.3f}, "
+						 f"MR: {test_results['mr']:.3f}, "
+						 f"hit@10: {test_results['hits@10']:.3f}")
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Parser For Arguments', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
