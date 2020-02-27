@@ -330,7 +330,7 @@ class Runner(object):
 		return results
 
 
-	def run_epoch(self, epoch, val_mrr = 0):
+	def run_epoch(self, epoch, val_mrr = 0.0):
 		"""
 		Function to run one epoch of training
 
@@ -357,8 +357,8 @@ class Runner(object):
 			self.optimizer.step()
 			losses.append(loss.item())
 
-			if step % 100 == 0:
-				self.logger.info('[E:{}| {}]: Train Loss:{:.5},  Val MRR:{:.5}\t{}'.format(epoch, step, np.mean(losses), self.best_val_mrr, self.p.name))
+			# if step % 100 == 0:
+			# 	self.logger.info('[E:{}| {}]: Train Loss:{:.5},  Val MRR:{:.5}\t{}'.format(epoch, step, np.mean(losses), self.best_val_mrr, self.p.name))
 
 		loss = np.mean(losses)
 		self.logger.info('[Epoch:{}]:  Training Loss:{:.4}\n'.format(epoch, loss))
@@ -392,12 +392,23 @@ class Runner(object):
 			# 	self.best_epoch	   = epoch
 			# 	self.save_model(save_path)
 
-			self.logger.info(
-				'[Epoch {}]: Training Loss: {:.5}\n\n'.format(epoch, train_loss))
+			# self.logger.info(
+			# 	'[Epoch {}]: Training Loss: {:.5}\n\n'.format(epoch, train_loss))
 
 		# self.logger.info('Loading best model, Evaluating on Test data')
 		# self.load_model(save_path)
-		# test_results = self.evaluate('test', epoch)
+		test_results = self.evaluate('test', self.p.max_epochs-1)
+		valid_results = self.evaluate('valid', self.p.max_epochs-1)
+		decorator = '*' * 5
+		self.logger.info(f"{decorator} Final Results {decorator}")
+		self.logger.info(f"Validation set ==> "
+						 f"MRR: {valid_results['mrr']:.3f},"
+						 f"MR: {valid_results['mr']:.3f}, "
+						 f"hit@10: {valid_results['hit@10']:.3f}")
+		self.logger.info(f"Test set ==> "
+						 f"MRR: {test_results['mrr']:.3f},"
+						 f"MR: {test_results['mr']:.3f}, "
+						 f"hit@10: {test_results['hit@10']:.3f}")
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Parser For Arguments', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
