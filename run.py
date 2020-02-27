@@ -283,7 +283,6 @@ class Runner(object):
 		left_results  = self.predict(split=split, mode='tail_batch')
 		right_results = self.predict(split=split, mode='head_batch')
 		results       = get_combined_results(left_results, right_results)
-		self.logger.info(results.keys())
 		# self.logger.info('[Epoch {} {}]: MRR: Tail : {:.5}, Head : {:.5}, Avg : {:.5}'.format(epoch, split, results['left_mrr'], results['right_mrr'], results['mrr']))
 		return results
 
@@ -367,6 +366,20 @@ class Runner(object):
 		return loss
 
 
+	def evaluate_predictions(self):
+		valid_results = self.evaluate('valid', self.p.max_epochs - 1)
+		test_results = self.evaluate('test', self.p.max_epochs - 1)
+		self.logger.info(f"Validation set ==> "
+						 f"MRR: {valid_results['mrr']:.3f}, "
+						 f"MR: {valid_results['mr']:.3f}, "
+						 f"hit@10: {valid_results['hits@10']:.3f}")
+		#
+		self.logger.info(f"Test set ==> "
+						 f"MRR: {test_results['mrr']:.3f}, "
+						 f"MR: {test_results['mr']:.3f}, "
+						 f"hit@10: {test_results['hits@10']:.3f}")
+
+
 	def fit(self):
 		"""
 		Function to run training and evaluation of model
@@ -388,6 +401,8 @@ class Runner(object):
 		start = tm.time()
 		for epoch in range(self.p.max_epochs):
 			train_loss  = self.run_epoch(epoch, val_mrr)
+			if epoch % 5 == 0:
+				self.evaluate_predictions()
 			# val_results = self.evaluate('valid', epoch)
 			#
 			# if val_results['mrr'] > self.best_val_mrr:
@@ -401,23 +416,14 @@ class Runner(object):
 		end = tm.time()
 		self.logger.info(f"Done training...")
 		self.logger.info(f"Training for {self.p.max_epochs} epochs took "
-						 f"{(end - start)/60:06.2f}mins")
+						 f"{(end - start)/60:.2f}mins")
 
 		# self.logger.info('Loading best model, Evaluating on Test data')
 		# self.load_model(save_path)
-		valid_results = self.evaluate('valid', self.p.max_epochs-1)
-		test_results = self.evaluate('test', self.p.max_epochs - 1)
+
 		decorator = '*' * 5
 		self.logger.info(f"{decorator} Final Results {decorator}")
-		self.logger.info(f"Validation set ==> "
-						 f"MRR: {valid_results['mrr']:.3f}, "
-						 f"MR: {valid_results['mr']:.3f}, "
-						 f"hit@10: {valid_results['hits@10']:.3f}")
-		#
-		self.logger.info(f"Test set ==> "
-						 f"MRR: {test_results['mrr']:.3f}, "
-						 f"MR: {test_results['mr']:.3f}, "
-						 f"hit@10: {test_results['hits@10']:.3f}")
+		self.evaluate_predictions()
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Parser For Arguments', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
