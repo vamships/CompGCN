@@ -382,19 +382,20 @@ class Runner(object):
 
 		for epoch in range(self.p.max_epochs):
 			train_loss  = self.run_epoch(epoch, val_mrr)
-			val_results = self.evaluate('valid', epoch)
+			# val_results = self.evaluate('valid', epoch)
+			#
+			# if val_results['mrr'] > self.best_val_mrr:
+			# 	self.best_val	   = val_results
+			# 	self.best_val_mrr  = val_results['mrr']
+			# 	self.best_epoch	   = epoch
+			# 	self.save_model(save_path)
 
-			if val_results['mrr'] > self.best_val_mrr:
-				self.best_val	   = val_results
-				self.best_val_mrr  = val_results['mrr']
-				self.best_epoch	   = epoch
-				self.save_model(save_path)
+			self.logger.info(
+				'[Epoch {}]: Training Loss: {:.5}\n\n'.format(epoch, train_loss))
 
-			self.logger.info('[Epoch {}]: Training Loss: {:.5}, Valid MRR: {:.5}\n\n'.format(epoch, train_loss, self.best_val_mrr))
-
-		self.logger.info('Loading best model, Evaluating on Test data')
-		self.load_model(save_path)
-		test_results = self.evaluate('test', epoch)
+		# self.logger.info('Loading best model, Evaluating on Test data')
+		# self.load_model(save_path)
+		# test_results = self.evaluate('test', epoch)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Parser For Arguments', formatter_class=argparse.ArgumentDefaultsHelpFormatter)

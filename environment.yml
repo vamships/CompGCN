@@ -1,0 +1,30 @@
+name: compgcn-gpu
+
+channels:
+  - conda-forge
+  - pytorch
+
+dependencies:
+  - autopep8
+  - biopython
+  - git-lfs
+  - jupyter
+  - matplotlib
+  - networkx
+  - numpy=1.16.2
+  - ordered-set=3.1
+  - pandas
+  - pip
+  - pytest
+  - pytorch
+  - python >= 3.6
+  - scikit-learn=0.21.1
+  - scikit-surprise
+  - scipy
+  - tqdm
+  - pip:
+      - cmake
+      - pre-commit
+      - dgl
+      - torch-scatter==1.1.2
+
