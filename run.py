@@ -4,6 +4,8 @@ from data_loader import *
 # sys.path.append('./')
 from model.models import *
 
+from tqdm import trange
+
 class Runner(object):
 
 	def load_data(self):
