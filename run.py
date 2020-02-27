@@ -283,7 +283,8 @@ class Runner(object):
 		left_results  = self.predict(split=split, mode='tail_batch')
 		right_results = self.predict(split=split, mode='head_batch')
 		results       = get_combined_results(left_results, right_results)
-		self.logger.info('[Epoch {} {}]: MRR: Tail : {:.5}, Head : {:.5}, Avg : {:.5}'.format(epoch, split, results['left_mrr'], results['right_mrr'], results['mrr']))
+		self.logger.info(results.keys())
+		# self.logger.info('[Epoch {} {}]: MRR: Tail : {:.5}, Head : {:.5}, Avg : {:.5}'.format(epoch, split, results['left_mrr'], results['right_mrr'], results['mrr']))
 		return results
 
 	def predict(self, split='valid', mode='tail_batch'):
@@ -325,8 +326,8 @@ class Runner(object):
 				for k in range(10):
 					results['hits@{}'.format(k+1)] = torch.numel(ranks[ranks <= (k+1)]) + results.get('hits@{}'.format(k+1), 0.0)
 
-				if step % 100 == 0:
-					self.logger.info('[{}, {} Step {}]\t{}'.format(split.title(), mode.title(), step, self.p.name))
+				# if step % 100 == 0:
+				# 	self.logger.info('[{}, {} Step {}]\t{}'.format(split.title(), mode.title(), step, self.p.name))
 
 		return results
 
@@ -404,18 +405,18 @@ class Runner(object):
 
 		# self.logger.info('Loading best model, Evaluating on Test data')
 		# self.load_model(save_path)
-		test_results = self.evaluate('test', self.p.max_epochs-1)
 		valid_results = self.evaluate('valid', self.p.max_epochs-1)
+		test_results = self.evaluate('test', self.p.max_epochs - 1)
 		decorator = '*' * 5
 		self.logger.info(f"{decorator} Final Results {decorator}")
 		self.logger.info(f"Validation set ==> "
 						 f"MRR: {valid_results['mrr']:.3f},"
-						 f"MR: {valid_results['mr']:.3f}, "
-						 f"hit@10: {valid_results['hit@10']:.3f}")
+						 f"MR: {valid_results['mr']:.3f}")
+		# f"hit@10: {valid_results['hit@10']:.3f}"
 		self.logger.info(f"Test set ==> "
 						 f"MRR: {test_results['mrr']:.3f},"
-						 f"MR: {test_results['mr']:.3f}, "
-						 f"hit@10: {test_results['hit@10']:.3f}")
+						 f"MR: {test_results['mr']:.3f}")
+		#f"hit@10: {test_results['hit@10']:.3f}
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Parser For Arguments', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
