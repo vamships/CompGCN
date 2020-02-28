@@ -6,6 +6,7 @@ from model.models import *
 
 import time as tm
 from tqdm import tqdm
+import pandas as pd
 
 class Runner(object):
 
@@ -49,12 +50,15 @@ class Runner(object):
 
 		self.p.num_ent		= len(self.ent2id)
 		self.p.num_rel		= len(self.rel2id) // 2
+		self.logger.info(f"Entities: {self.p.num_ent}")
+		self.logger.info(f"Relations: {self.p.num_rel}")
 		self.p.embed_dim	= self.p.k_w * self.p.k_h if self.p.embed_dim is None else self.p.embed_dim
+		self.logger.info(f"Embedding dimension: {self.p.embed_dim}")
 
 		self.data = ddict(list)
 		sr2o = ddict(set)
 
-		for split in ['train', 'test', 'valid']:
+		for split in ['train', 'test', 'valid']: # ['train', 'test', 'valid']
 			for line in open('./data/{}/{}.txt'.format(self.p.dataset, split)):
 				sub, rel, obj = map(str.lower, line.strip().split('\t'))
 				sub, rel, obj = self.ent2id[sub], self.rel2id[rel], self.ent2id[obj]
@@ -65,6 +69,9 @@ class Runner(object):
 					sr2o[(obj, rel+self.p.num_rel)].add(sub)
 
 		self.data = dict(self.data)
+		self.logger.info(f"Triples in Train ({len(self.data['train']):,d}), "
+						 f"Validation ({len(self.data['valid']):,d}), and "
+						 f"Test ({len(self.data['test']):,d})")
 
 		self.sr2o = {k: list(v) for k, v in sr2o.items()}
 		for split in ['test', 'valid']:
@@ -149,7 +156,6 @@ class Runner(object):
 		self.p			= params
 		self.logger		= get_logger(self.p.name, self.p.log_dir, self.p.config_dir)
 
-		self.logger.info(vars(self.p))
 		pprint(vars(self.p))
 
 		if self.p.gpu != '-1' and torch.cuda.is_available():
@@ -378,6 +384,7 @@ class Runner(object):
 						 f"MRR: {test_results['mrr']:.3f}, "
 						 f"MR: {test_results['mr']:.3f}, "
 						 f"hit@10: {test_results['hits@10']:.3f}")
+		return valid_results, test_results
 
 
 	def fit(self):
@@ -393,16 +400,31 @@ class Runner(object):
 		self.best_val_mrr, self.best_val, self.best_epoch, val_mrr = 0., {}, 0, 0.
 		save_path = os.path.join('./checkpoints', self.p.name)
 
+		header = ["epoch", "loss", "MRR", "MR", "hit@10"]
+		df_perf_valid = pd.DataFrame(np.zeros((self.p.max_epochs, 5)), columns=header)
+		df_perf_test = pd.DataFrame(np.zeros((self.p.max_epochs, 5)), columns=header)
+
 		if self.p.restore:
 			self.load_model(save_path)
 			self.logger.info('Successfully Loaded previous model')
 
+		idx_perf_log = 0
 		self.logger.info(f"Start training...")
 		start = tm.time()
 		for epoch in range(self.p.max_epochs):
 			train_loss  = self.run_epoch(epoch, val_mrr)
 			if epoch % 5 == 0:
-				self.evaluate_predictions()
+
+				valid_results, test_results = self.evaluate_predictions()
+				df_perf_valid.iloc[idx_perf_log, :] = [epoch, train_loss,
+													   valid_results['mrr'],
+													   valid_results['mr'],
+													   valid_results['hits@10']]
+				df_perf_test.iloc[idx_perf_log, :] = [epoch, train_loss,
+													  test_results['mrr'],
+													  test_results['mr'],
+													  test_results['hits@10']]
+				idx_perf_log += 1
 			# val_results = self.evaluate('valid', epoch)
 			#
 			# if val_results['mrr'] > self.best_val_mrr:
@@ -417,6 +439,10 @@ class Runner(object):
 		self.logger.info(f"Done training...")
 		self.logger.info(f"Training for {self.p.max_epochs} epochs took "
 						 f"{(end - start)/60:.2f}mins")
+		df_perf_valid.to_csv(os.path.join('./performance_track', 'valid.csv'),
+							 index=False)
+		df_perf_test.to_csv(os.path.join('./performance_track', 'test.csv'),
+							index=False)
 
 		# self.logger.info('Loading best model, Evaluating on Test data')
 		# self.load_model(save_path)
