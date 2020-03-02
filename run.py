@@ -64,6 +64,7 @@ class Runner(object):
 				sub, rel, obj = self.ent2id[sub], self.rel2id[rel], self.ent2id[obj]
 				self.data[split].append((sub, rel, obj))
 
+				# Mirrored edges in training set
 				if split == 'train': 
 					sr2o[(sub, rel)].add(obj)
 					sr2o[(obj, rel+self.p.num_rel)].add(sub)
@@ -73,12 +74,14 @@ class Runner(object):
 						 f"Validation ({len(self.data['valid']):,d}), and "
 						 f"Test ({len(self.data['test']):,d})")
 
+		# For training set only
 		self.sr2o = {k: list(v) for k, v in sr2o.items()}
 		for split in ['test', 'valid']:
 			for sub, rel, obj in self.data[split]:
 				sr2o[(sub, rel)].add(obj)
 				sr2o[(obj, rel+self.p.num_rel)].add(sub)
 
+		# For all data
 		self.sr2o_all = {k: list(v) for k, v in sr2o.items()}
 		self.triples  = ddict(list)
 
@@ -424,6 +427,10 @@ class Runner(object):
 													  test_results['mrr'],
 													  test_results['mr'],
 													  test_results['hits@10']]
+				df_perf_valid.to_csv(os.path.join('./performance_track', 'valid.csv'),
+									 index=False)
+				df_perf_test.to_csv(os.path.join('./performance_track', 'test.csv'),
+									index=False)
 				idx_perf_log += 1
 			# val_results = self.evaluate('valid', epoch)
 			#
@@ -439,10 +446,6 @@ class Runner(object):
 		self.logger.info(f"Done training...")
 		self.logger.info(f"Training for {self.p.max_epochs} epochs took "
 						 f"{(end - start)/60:.2f}mins")
-		df_perf_valid.to_csv(os.path.join('./performance_track', 'valid.csv'),
-							 index=False)
-		df_perf_test.to_csv(os.path.join('./performance_track', 'test.csv'),
-							index=False)
 
 		# self.logger.info('Loading best model, Evaluating on Test data')
 		# self.load_model(save_path)
